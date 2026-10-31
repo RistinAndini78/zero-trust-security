@@ -1,0 +1,180 @@
+{
+  "info": {
+    "_postman_id": "zero-trust-demo-collection",
+    "name": "Demo Zero Trust",
+    "description": "Collection demonstrasi tugas Sistem Nilai Zero Trust.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Login mahasiswa berhasil",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Device-ID", "value": "{{device_mhs1}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"username\":\"mhs1\",\"password\":\"mhs123\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{base_url}}/auth/login"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "const data = pm.response.json();",
+        "pm.environment.set('access_token', data.accessToken);",
+        "pm.environment.set('refresh_token', data.refreshToken);",
+        "pm.test('Login berhasil', () => pm.response.to.have.status(200));"
+      ] } }]
+    },
+    {
+      "name": "2. Device salah ditolak",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Device-ID", "value": "device-salah" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"username\":\"mhs1\",\"password\":\"mhs123\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{base_url}}/auth/login"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Device salah ditolak', () => pm.response.to.have.status(401));"
+      ] } }]
+    },
+    {
+      "name": "3. Mahasiswa melihat transkrip sendiri",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "X-Device-ID", "value": "{{device_mhs1}}" }
+        ],
+        "url": "{{base_url}}/transkrip/{{nim_mhs1}}"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Transkrip sendiri diizinkan', () => pm.response.to.have.status(200));"
+      ] } }]
+    },
+    {
+      "name": "4. Mahasiswa melihat transkrip orang lain",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{access_token}}" },
+          { "key": "X-Device-ID", "value": "{{device_mhs1}}" }
+        ],
+        "url": "{{base_url}}/transkrip/237001002"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Transkrip orang lain ditolak', () => pm.response.to.have.status(403));"
+      ] } }]
+    },
+    {
+      "name": "5. Login dosen",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Device-ID", "value": "{{device_dosen1}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"username\":\"dosen1\",\"password\":\"dosen123\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{base_url}}/auth/login"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "const data = pm.response.json();",
+        "pm.environment.set('dosen_token', data.accessToken);",
+        "pm.test('Login dosen berhasil', () => pm.response.to.have.status(200));"
+      ] } }]
+    },
+    {
+      "name": "6. Dosen mengubah nilai",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{dosen_token}}" },
+          { "key": "X-Device-ID", "value": "{{device_dosen1}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"value\":\"A\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{base_url}}/nilai/1"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Nilai berhasil diubah', () => pm.response.to.have.status(200));"
+      ] } }]
+    },
+    {
+      "name": "7. Dosen finalisasi kelas",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{dosen_token}}" },
+          { "key": "X-Device-ID", "value": "{{device_dosen1}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+        "url": "{{base_url}}/kelas/1/finalisasi"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Finalisasi dan sinkronisasi berhasil', () => pm.response.to.have.status(200));"
+      ] } }]
+    },
+    {
+      "name": "8. Minta token service",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"clientId\":\"{{service_client_id}}\",\"clientSecret\":\"{{service_client_secret}}\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{base_url}}/auth/service"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "const data = pm.response.json();",
+        "pm.environment.set('service_token', data.accessToken);",
+        "pm.test('Token service berhasil', () => pm.response.to.have.status(200));"
+      ] } }]
+    },
+    {
+      "name": "9. Service membaca nilai melalui gateway",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{service_token}}" }],
+        "url": "{{base_url}}/nilai"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Service dapat membaca nilai', () => pm.response.to.have.status(200));"
+      ] } }]
+    },
+    {
+      "name": "10. Akses langsung service ditolak",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{service_token}}" }],
+        "url": "http://localhost:3001/nilai"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Akses langsung ditolak', () => pm.response.to.have.status(403));"
+      ] } }]
+    },
+    {
+      "name": "11. Refresh token",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"refreshToken\":\"{{refresh_token}}\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{base_url}}/auth/refresh"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Refresh token berhasil', () => pm.response.to.have.status(200));"
+      ] } }]
+    },
+    {
+      "name": "12. Logout",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"refreshToken\":\"{{refresh_token}}\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{base_url}}/auth/logout"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Logout berhasil', () => pm.response.to.have.status(200));"
+      ] } }]
+    }
+  ]
+}

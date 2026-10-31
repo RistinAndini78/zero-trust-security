@@ -1,0 +1,20 @@
+{
+  "name": "sistem-nilai-zero-trust",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sistem Nilai dengan API Gateway dan prinsip Zero Trust",
+  "scripts": {
+    "gateway": "node gateway.js",
+    "nilai": "node services/nilai.js",
+    "transkrip": "node services/transkrip.js",
+    "start": "concurrently \"node gateway.js\" \"node services/nilai.js\" \"node services/transkrip.js\"",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "concurrently": "^9.1.2",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
